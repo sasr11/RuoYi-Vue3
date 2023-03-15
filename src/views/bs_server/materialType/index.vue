@@ -83,10 +83,10 @@
     <!-- 添加或修改物资分类对话框 -->
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="物资类别名称" prop="materialTypeName">
+        <el-form-item label="物资类别名称" prop="materialTypeName" label-width="100px">
           <el-input v-model="form.materialTypeName" placeholder="请输入物资类别名称" />
         </el-form-item>
-        <el-form-item label="物资父节点" prop="parentId">
+        <el-form-item label="物资父节点" prop="parentId" label-width="100px">
           <el-tree-select
               v-model="form.parentId"
               :data="materialTypeOptions"
@@ -96,10 +96,10 @@
               check-strictly
           />
         </el-form-item>
-        <el-form-item label="显示顺序" prop="orderNum">
-          <el-input v-model="form.orderNum" placeholder="请输入显示顺序" />
+        <el-form-item label="显示顺序" prop="orderNum" label-width="100px">
+          <el-input-number v-model="form.orderNum" controls-position="right" :min="0" />
         </el-form-item>
-        <el-form-item label="备注" prop="remark">
+        <el-form-item label="备注" prop="remark" label-width="100px">
           <el-input v-model="form.remark" placeholder="请输入备注" />
         </el-form-item>
       </el-form>
@@ -156,7 +156,6 @@ export default {
       this.loading = true;
       listMaterialType(this.queryParams).then(response => {
         this.materialTypeList = this.handleTree(response.data, "materialTypeId", "parentId");
-        console.log(this.materialTypeList);  ////////////////////////////
         this.loading = false;
       });
     },

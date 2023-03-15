@@ -39,48 +39,6 @@
       </el-form-item>
     </el-form>
 
-<!--    <el-row :gutter="10" class="mb8">-->
-<!--      <el-col :span="1.5">-->
-<!--        <el-button-->
-<!--          type="primary"-->
-<!--          plain-->
-<!--          icon="plus"-->
-<!--          @click="handleAdd"-->
-<!--          v-hasPermi="['bs_server:inboundDetail:add']"-->
-<!--        >新增</el-button>-->
-<!--      </el-col>-->
-<!--      <el-col :span="1.5">-->
-<!--        <el-button-->
-<!--          type="success"-->
-<!--          plain-->
-<!--          icon="edit"-->
-<!--          :disabled="single"-->
-<!--          @click="handleUpdate"-->
-<!--          v-hasPermi="['bs_server:inboundDetail:edit']"-->
-<!--        >修改</el-button>-->
-<!--      </el-col>-->
-<!--      <el-col :span="1.5">-->
-<!--        <el-button-->
-<!--          type="danger"-->
-<!--          plain-->
-<!--          icon="delete"-->
-<!--          :disabled="multiple"-->
-<!--          @click="handleDelete"-->
-<!--          v-hasPermi="['bs_server:inboundDetail:remove']"-->
-<!--        >删除</el-button>-->
-<!--      </el-col>-->
-<!--      <el-col :span="1.5">-->
-<!--        <el-button-->
-<!--          type="warning"-->
-<!--          plain-->
-<!--          icon="download"-->
-<!--          @click="handleExport"-->
-<!--          v-hasPermi="['bs_server:inboundDetail:export']"-->
-<!--        >导出</el-button>-->
-<!--      </el-col>-->
-<!--      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>-->
-<!--    </el-row>-->
-
     <el-table
         v-loading="loading"
         :data="inboundDetailList"
@@ -89,29 +47,13 @@
         :summary-method="summaryMethod"
     >
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="入库编号" align="center" prop="inboundId" />
       <el-table-column label="序号" align="center" prop="orderNum" />
+      <el-table-column label="入库编号" align="center" prop="inboundId" />
       <el-table-column label="供应商" align="center" prop="supplierName" />
       <el-table-column label="仓库" align="center" prop="warehouseName" />
       <el-table-column label="物资名称" align="center" prop="materialName" />
       <el-table-column label="入库数量" align="center" prop="count" />
       <el-table-column label="单价" align="center" prop="price" />
-<!--      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">-->
-<!--        <template #default="scope">-->
-<!--          <el-button-->
-<!--            type="text"-->
-<!--            icon="edit"-->
-<!--            @click="handleUpdate(scope.row)"-->
-<!--            v-hasPermi="['bs_server:inboundDetail:edit']"-->
-<!--          >修改</el-button>-->
-<!--          <el-button-->
-<!--            type="text"-->
-<!--            icon="delete"-->
-<!--            @click="handleDelete(scope.row)"-->
-<!--            v-hasPermi="['bs_server:inboundDetail:remove']"-->
-<!--          >删除</el-button>-->
-<!--        </template>-->
-<!--      </el-table-column>-->
     </el-table>
     
     <pagination

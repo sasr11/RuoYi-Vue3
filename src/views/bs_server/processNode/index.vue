@@ -1,28 +1,33 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="物资名称" prop="materialName">
+    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
+      <el-form-item label="流程节点名称" prop="processNodeName">
         <el-input
-          v-model="queryParams.materialName"
-          placeholder="请输入物资名称"
+          v-model="queryParams.processNodeName"
+          placeholder="请输入流程节点名称"
           clearable
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="物资类别" prop="materialTypeId">
-        <el-tree-select
-            v-model="queryParams.materialTypeId"
-            :data="materialTypeList"
-            :props="{ value: 'materialTypeId', label: 'materialTypeName', children: 'children' }"
-            value-key="materialTypeId"
-            placeholder="请选择物资类别"
-            filterable
-            check-strictly
+      <el-form-item label="流程表编号" prop="processId">
+        <el-input
+          v-model="queryParams.processId"
+          placeholder="请输入流程表编号"
+          clearable
+          @keyup.enter.native="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="该节点用户" prop="userId">
+        <el-input
+          v-model="queryParams.userId"
+          placeholder="请输入该节点用户"
+          clearable
+          @keyup.enter.native="handleQuery"
         />
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" icon="search" @click="handleQuery">搜索</el-button>
-        <el-button icon="refresh" @click="resetQuery">重置</el-button>
+        <el-button type="primary" icon="search"  @click="handleQuery">搜索</el-button>
+        <el-button icon="refresh"  @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
 
@@ -33,7 +38,7 @@
           plain
           icon="plus"
           @click="handleAdd"
-          v-hasPermi="['bs_server:material:add']"
+          v-hasPermi="['bs_server:processNode:add']"
         >新增</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -43,7 +48,7 @@
           icon="edit"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['bs_server:material:edit']"
+          v-hasPermi="['bs_server:processNode:edit']"
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -53,7 +58,7 @@
           icon="delete"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['bs_server:material:remove']"
+          v-hasPermi="['bs_server:processNode:remove']"
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -62,17 +67,19 @@
           plain
           icon="download"
           @click="handleExport"
-          v-hasPermi="['bs_server:material:export']"
+          v-hasPermi="['bs_server:processNode:export']"
         >导出</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="materialList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="processNodeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="物资编号" align="center" prop="materialId" />
-      <el-table-column label="物资名称" align="center" prop="materialName" />
-      <el-table-column label="物资类别编号" align="center" prop="materialTypeId" />
+      <el-table-column label="流程节点编号" align="center" prop="processNodeId" />
+      <el-table-column label="流程节点名称" align="center" prop="processNodeName" />
+      <el-table-column label="流程表编号" align="center" prop="processId" />
+      <el-table-column label="该节点用户" align="center" prop="userId" />
+      <el-table-column label="流程顺序" align="center" prop="orderNum" />
       <el-table-column label="备注" align="center" prop="remark" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
@@ -80,13 +87,13 @@
             type="text"
             icon="edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['bs_server:material:edit']"
+            v-hasPermi="['bs_server:processNode:edit']"
           >修改</el-button>
           <el-button
             type="text"
             icon="delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['bs_server:material:remove']"
+            v-hasPermi="['bs_server:processNode:remove']"
           >删除</el-button>
         </template>
       </el-table-column>
@@ -100,22 +107,20 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改物资对话框 -->
+    <!-- 添加或修改流程节点对话框 -->
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="物资名称" prop="materialName">
-          <el-input v-model="form.materialName" placeholder="请输入物资名称" />
+        <el-form-item label="流程节点名称" prop="processNodeName">
+          <el-input v-model="form.processNodeName" placeholder="请输入流程节点名称" />
         </el-form-item>
-        <el-form-item label="物资类别" prop="materialTypeId">
-          <el-tree-select
-              v-model="form.materialTypeId"
-              :data="materialTypeList"
-              :props="{ value: 'materialTypeId', label: 'materialTypeName', children: 'children' }"
-              value-key="materialTypeId"
-              placeholder="请选择物资类别"
-              filterable
-              check-strictly
-          />
+        <el-form-item label="流程表编号" prop="processId">
+          <el-input v-model="form.processId" placeholder="请输入流程表编号" />
+        </el-form-item>
+        <el-form-item label="该节点用户" prop="userId">
+          <el-input v-model="form.userId" placeholder="请输入该节点用户" />
+        </el-form-item>
+        <el-form-item label="流程顺序" prop="orderNum">
+          <el-input v-model="form.orderNum" placeholder="请输入流程顺序" />
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" placeholder="请输入备注" />
@@ -130,11 +135,10 @@
 </template>
 
 <script>
-import { listMaterial, getMaterial, delMaterial, addMaterial, updateMaterial } from "@/api/bs_server/material";
-import { listMaterialType } from "@/api/bs_server/materialType";
+import { listProcessNode, getProcessNode, delProcessNode, addProcessNode, updateProcessNode } from "@/api/bs_server/processNode";
 
 export default {
-  name: "Material",
+  name: "ProcessNode",
   data() {
     return {
       // 遮罩层
@@ -149,10 +153,8 @@ export default {
       showSearch: true,
       // 总条数
       total: 0,
-      // 物资表格数据
-      materialList: [],
-      // 物资类别表数据
-      materialTypeList: [],
+      // 流程节点表格数据
+      processNodeList: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -161,8 +163,9 @@ export default {
       queryParams: {
         pageNum: 1,
         pageSize: 10,
-        materialName: null,
-        materialTypeId: null,
+        processNodeName: null,
+        processId: null,
+        userId: null,
       },
       // 表单参数
       form: {},
@@ -173,14 +176,13 @@ export default {
   },
   created() {
     this.getList();
-    this.getMaterialTypeTree();
   },
   methods: {
-    /** 查询物资列表 */
+    /** 查询流程节点列表 */
     getList() {
       this.loading = true;
-      listMaterial(this.queryParams).then(response => {
-        this.materialList = response.rows;
+      listProcessNode(this.queryParams).then(response => {
+        this.processNodeList = response.rows;
         this.total = response.total;
         this.loading = false;
       });
@@ -193,9 +195,11 @@ export default {
     // 表单重置
     reset() {
       this.form = {
-        materialId: null,
-        materialName: null,
-        materialTypeId: null,
+        processNodeId: null,
+        processNodeName: null,
+        processId: null,
+        userId: null,
+        orderNum: null,
         remark: null
       };
       this.resetForm("form");
@@ -212,7 +216,7 @@ export default {
     },
     // 多选框选中数据
     handleSelectionChange(selection) {
-      this.ids = selection.map(item => item.materialId)
+      this.ids = selection.map(item => item.processNodeId)
       this.single = selection.length!==1
       this.multiple = !selection.length
     },
@@ -220,30 +224,30 @@ export default {
     handleAdd() {
       this.reset();
       this.open = true;
-      this.title = "添加物资";
+      this.title = "添加流程节点";
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset();
-      const materialId = row.materialId || this.ids
-      getMaterial(materialId).then(response => {
+      const processNodeId = row.processNodeId || this.ids
+      getProcessNode(processNodeId).then(response => {
         this.form = response.data;
         this.open = true;
-        this.title = "修改物资";
+        this.title = "修改流程节点";
       });
     },
     /** 提交按钮 */
     submitForm() {
       this.$refs["form"].validate(valid => {
         if (valid) {
-          if (this.form.materialId != null) {
-            updateMaterial(this.form).then(response => {
+          if (this.form.processNodeId != null) {
+            updateProcessNode(this.form).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.open = false;
               this.getList();
             });
           } else {
-            addMaterial(this.form).then(response => {
+            addProcessNode(this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();
@@ -254,9 +258,9 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const materialIds = row.materialId || this.ids;
-      this.$modal.confirm('是否确认删除物资编号为"' + materialIds + '"的数据项？').then(function() {
-        return delMaterial(materialIds);
+      const processNodeIds = row.processNodeId || this.ids;
+      this.$modal.confirm('是否确认删除流程节点编号为"' + processNodeIds + '"的数据项？').then(function() {
+        return delProcessNode(processNodeIds);
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");
@@ -264,15 +268,9 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('bs_server/material/export', {
+      this.download('bs_server/processNode/export', {
         ...this.queryParams
-      }, `material_${new Date().getTime()}.xlsx`)
-    },
-    getMaterialTypeTree(){
-      listMaterialType().then(response => {
-        this.materialTypeList = this.handleTree(response.data, "materialTypeId", "parentId");
-        this.loading = false;
-      });
+      }, `processNode_${new Date().getTime()}.xlsx`)
     }
   }
 };

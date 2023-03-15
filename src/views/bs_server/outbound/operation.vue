@@ -2,53 +2,43 @@
   <div class="app-container">
     <!-- 查询表单 -->
     <el-form :model="queryParams" ref="queryForm" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item v-if="role_==='admin'" label="申请者" prop="createBy" label-width="auto">
+      <el-form-item label="申请者" prop="createBy" label-width="auto">
         <el-input
-          v-model="queryParams.createBy"
-          placeholder="请输入操作者名称"
-          clearable
-          @keyup.enter.native="handleQuery"
+            v-model="queryParams.createBy"
+            placeholder="请输入操作者名称"
+            clearable
+            @keyup.enter.native="handleQuery"
         />
       </el-form-item>
       <el-form-item label="申请时间">
         <el-date-picker
-          v-model="daterangeCreateTime"
-          style="width: 240px"
-          value-format="yyyy-MM-dd"
-          type="daterange"
-          range-separator="-"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
+            v-model="daterangeCreateTime"
+            style="width: 240px"
+            value-format="yyyy-MM-dd"
+            type="daterange"
+            range-separator="-"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
         ></el-date-picker>
       </el-form-item>
       <el-form-item label="出库者" prop="updateBy" label-width="auto">
         <el-input
-          v-model="queryParams.updateBy"
-          placeholder="请输入更新者名称"
-          clearable
-          @keyup.enter.native="handleQuery"
+            v-model="queryParams.updateBy"
+            placeholder="请输入更新者名称"
+            clearable
+            @keyup.enter.native="handleQuery"
         />
       </el-form-item>
       <el-form-item label="出库时间">
         <el-date-picker
-          v-model="daterangeUpdateTime"
-          style="width: 240px"
-          value-format="yyyy-MM-dd"
-          type="daterange"
-          range-separator="-"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
+            v-model="daterangeUpdateTime"
+            style="width: 240px"
+            value-format="yyyy-MM-dd"
+            type="daterange"
+            range-separator="-"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
         ></el-date-picker>
-      </el-form-item>
-      <el-form-item label="出库状态" prop="status">
-        <el-select v-model="queryParams.status" placeholder="请选择出库状态" clearable>
-          <el-option
-              v-for="dict in bs_outbound"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
-          />
-        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="search"  @click="handleQuery">搜索</el-button>
@@ -60,20 +50,20 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
-          type="primary"
-          plain
-          icon="plus"
-          @click="handleAdd"
-          v-hasPermi="['bs_server:outbound:add']"
+            type="primary"
+            plain
+            icon="plus"
+            @click="handleAdd"
+            v-hasPermi="['bs_server:outbound:add']"
         >新增</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
-          type="warning"
-          plain
-          icon="download"
-          @click="handleExport"
-          v-hasPermi="['bs_server:outbound:export']"
+            type="warning"
+            plain
+            icon="download"
+            @click="handleExport"
+            v-hasPermi="['bs_server:outbound:export']"
         >导出</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
@@ -91,7 +81,14 @@
       <el-table-column label="出库编号" align="center" prop="outboundId" />
       <el-table-column label="申请人" align="center" prop="createBy" />
       <el-table-column label="出库总价" align="center" prop="totalPrice" />
-      <el-table-column label="状态" align="center" prop="status">
+      <el-table-column label="状态" align="center" prop="status"
+                       filter-placement="bottom-end"
+                       :filters="[
+                            { text: '待出库', value: '3' },
+                            { text: '已出库', value: '4' },
+                        ]"
+                       :filter-method="filterStatus"
+                       >
         <template #default="scope">
           <dict-tag :options="bs_outbound" :value="scope.row.status"/>
         </template>
@@ -102,25 +99,25 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button
-            v-if="scope.row.status==='0'"
-            type="text"
-            icon="edit"
-            @click="handleUpdate(scope.row)"
-            v-hasPermi="['bs_server:outbound:edit']"
-          >提交</el-button>
+              v-if="scope.row.status === '3'"
+              type="text"
+              icon="edit"
+              @click="handleUpdate(scope.row)"
+              v-hasPermi="['bs_server:outbound:edit']"
+          >出库</el-button>
           <el-button
-            v-if="scope.row.status!=='0'"
-            type="text"
-            icon="edit"
-            @click="handleSee(scope.row)"
-            v-hasPermi="['bs_server:outbound:edit']"
+              v-if="scope.row.status === '4'"
+              type="text"
+              icon="edit"
+              @click="handleUpdate(scope.row)"
+              v-hasPermi="['bs_server:outbound:edit']"
           >查看</el-button>
           <el-button
-              v-if="userName_ === 'admin'"
-            type="text"
-            icon="delete"
-            @click="handleDelete(scope.row)"
-            v-hasPermi="['bs_server:outbound:remove']"
+              v-if="role_ === 'admin'"
+              type="text"
+              icon="delete"
+              @click="handleDelete(scope.row)"
+              v-hasPermi="['bs_server:outbound:remove']"
           >删除</el-button>
         </template>
       </el-table-column>
@@ -128,127 +125,26 @@
 
     <!-- 分页 -->
     <pagination
-      v-show="total>0"
-      :total="total"
-      :page.sync="queryParams.pageNum"
-      :limit.sync="queryParams.pageSize"
-      @pagination="getList"
+        v-show="total>0"
+        :total="total"
+        :page.sync="queryParams.pageNum"
+        :limit.sync="queryParams.pageSize"
+        @pagination="getList"
     />
 
-    <!-- 添加或修改出库对话框 -->
-    <el-dialog :title="title" v-model="open" width="900px" append-to-body>
-      <el-form :inline="true" ref="form" :model="form" :rules="rules" label-width="100px">
-        <el-form-item v-if="form.outboundId != undefined" label="出库编号：" prop="outboundId">
-          <div style="width: 250px">{{form.outboundId}}</div>
-        </el-form-item>
-        <el-form-item v-if="form.userId != undefined" label="申请人：" prop="createBy">
-          <div style="width: 250px">{{form.createBy}}</div>
-        </el-form-item>
-        <el-form-item label="出库总价：" prop="totalPrice">
-          <div style="width: 250px">{{form.totalPrice}}</div>
-        </el-form-item>
-        <el-form-item label="出库人：" prop="updateBy">
-          <div style="width: 250px">{{form.updateBy}}</div>
-        </el-form-item>
-        <el-form-item label="流程：" prop="processId">
-            <el-select v-model="form.processId" placeholder="请选择流程">
-              <el-option
-                  v-for="dict in processList"
-                  :key="dict.processId"
-                  :label="dict.processName"
-                  :value="dict.processId"
-              />
-            </el-select>
-        </el-form-item>
-        <!-- 出库详情 -->
-        <el-divider content-position="center">出库详情信息</el-divider>
-        <el-row :gutter="10" class="mb8">
-          <el-col :span="1.5">
-            <el-button type="primary" icon="plus"  @click="handleAddOutboundDetail">添加</el-button>
-          </el-col>
-          <el-col :span="1.5">
-            <el-button type="danger" icon="delete"  @click="handleDeleteOutboundDetail">删除</el-button>
-          </el-col>
-        </el-row>
-        <!-- 出库详情表数据 -->
-        <el-table 
-            :data="outboundDetailList" 
-            :row-class-name="rowOutboundDetailIndex" 
-            @selection-change="handleOutboundDetailSelectionChange" 
-            ref="outboundDetail"
-            height="250"
-            show-summary
-            :summary-method="summaryMethod2"
-        >
-          <el-table-column type="selection" width="50" align="center" />
-          <el-table-column label="序号" align="center" prop="orderNum" width="50"/>
-          <el-table-column label="客户" align="center" prop="clientId" width="150">
-            <template #default="scope">
-              <el-select v-model="scope.row.clientId" placeholder="请选择客户">
-                <el-option
-                    v-for="dict in clientList"
-                    :key="dict.clientId"
-                    :label="dict.clientName"
-                    :value="dict.clientId"
-                />
-              </el-select>
-            </template>
-          </el-table-column>
-          <el-table-column label="仓库" align="center" prop="warehouseId" width="150">
-            <template #default="scope">
-              <el-select v-model="scope.row.warehouseId" placeholder="请选择仓库" clearable>
-                <el-option
-                    v-for="dict in warehouseList"
-                    :key="dict.warehouseId"
-                    :label="dict.warehouseName"
-                    :value="dict.warehouseId"
-                />
-              </el-select>
-            </template>
-          </el-table-column>
-          <el-table-column label="物资编号" align="center" prop="materialId" width="150">
-            <template #default="scope">
-              <el-select v-model="scope.row.materialId" placeholder="请选择物资名称" clearable>
-                <el-option
-                    v-for="dict in materialList"
-                    :key="dict.materialId"
-                    :label="dict.materialName"
-                    :value="dict.materialId"
-                />
-              </el-select>
-            </template>
-          </el-table-column>
-          <el-table-column label="数量" align="center" prop="count" width="150">
-            <template #default="scope">
-              <el-input-number style="width: 120px" v-model="scope.row.count" controls-position="right" :min="0" />
-            </template>
-          </el-table-column>
-          <el-table-column label="单价" align="center" prop="price" width="150">
-            <template #default="scope">
-              <el-input v-model="scope.row.price" placeholder="请输入单价" />
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">提交</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
-    </el-dialog>
-
     <!-- 查看数据对话框 -->
-    <el-dialog :title="title2" v-model="open2" width="900px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="900px" append-to-body>
       <el-form :inline="true" ref="form" :model="form" :rules="rules" label-width="100px" disabled>
         <el-form-item label="出库编号：" prop="outboundId">
           <div style="width: 250px">{{form.outboundId}}</div>
         </el-form-item>
-        <el-form-item label="申请人：" prop="createBy">
+        <el-form-item label="申请人：" prop="userId">
           <div style="width: 250px">{{form.createBy}}</div>
         </el-form-item>
         <el-form-item label="出库总价：" prop="totalPrice">
           <div style="width: 250px">{{form.totalPrice}}</div>
         </el-form-item>
-        <el-form-item label="出库人：" prop="updateBy">
+        <el-form-item label="出库人：" prop="user2Id">
           <div style="width: 250px">{{form.updateBy}}</div>
         </el-form-item>
         <el-form-item label="流程名称：" prop="processId">
@@ -273,22 +169,23 @@
           <el-table-column label="单价" align="center" prop="price" width="150"/>
         </el-table>
       </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitForm">提交</el-button>
+        <el-button @click="cancel">取 消</el-button>
+      </div>
     </el-dialog>
 
   </div>
+
 </template>
 
 <script>
-import { listOutbound, getOutbound, delOutbound, addOutbound, updateOutbound } from "@/api/bs_server/outbound";
-import { listMaterial } from "@/api/bs_server/material";
-import { listClient } from "@/api/bs_server/client";
-import { listWarehouse } from "@/api/bs_server/warehouse";
-import { listProcess} from "@/api/bs_server/process";
-import { useDict } from "@/utils/dict";
-import store from '@/store'
+import store from "@/store";
+import {useDict} from "@/utils/dict";
+import {addOutbound, delOutbound, getOutbound, listOutbound, updateOutbound} from "@/api/bs_server/outbound";
 
 export default {
-  name: "Outbound",
+  name: "operation",
   data() {
     return {
       // 当前用户名称
@@ -326,9 +223,9 @@ export default {
       processList: [],
 
       // 弹出层标题
-      title: "", title2:"",
+      title: "",
       // 是否显示弹出层
-      open: false, open2:false,
+      open: false,
       // 单价时间范围
       daterangeCreateTime: [],
       // 单价时间范围
@@ -353,14 +250,12 @@ export default {
   },
   created() {
     this.getList();
-    console.log(store.state.value.user.roles[0]);
     this.bs_outbound = useDict("bs_outbound")["bs_outbound"];  //获取字典数据
   },
   methods: {
     /** 查询出库列表 */
     getList() {
       this.loading = true;
-      if(this.role_ !== "admin") this.queryParams.createBy = this.userName_;
       this.queryParams.params = {};
       if (null != this.daterangeCreateTime && '' !== this.daterangeCreateTime) {
         this.queryParams.params["beginCreateTime"] = this.daterangeCreateTime[0];
@@ -371,35 +266,20 @@ export default {
         this.queryParams.params["endUpdateTime"] = this.daterangeUpdateTime[1];
       }
       listOutbound(this.queryParams).then(response => {
-        this.outboundList = response.rows;
+        this.outboundList = []
+        this.handleData(response.rows);
         this.total = response.total;
       });
-      this.getListClient();
-      this.getListWarehouse();
-      this.getListMaterial();
-      this.getListProcess();
-
       this.loading = false;
     },
-    getListClient(){
-      listClient().then(res =>{
-        this.clientList = res.rows;
+    handleData(dataList){
+      dataList.forEach((item)=>{
+        if(item.status ==='3' || item.status ==='4') this.outboundList.push(item);
       })
     },
-    getListWarehouse(){
-      listWarehouse().then(res =>{
-        this.warehouseList = res.rows;
-      })
-    },
-    getListMaterial(){
-      listMaterial().then(res =>{
-        this.materialList = res.rows;
-      })
-    },
-    getListProcess(){
-      listProcess().then(res =>{
-        this.processList = res.rows;
-      })
+    /** 筛选状态 */
+    filterStatus(value, row){
+      return row.status === value;
     },
     /** 表格1合计 */
     summaryMethod1(params) { // params是由 columns和data组成的对象，具体计算看个人需求
@@ -488,34 +368,17 @@ export default {
         this.form = response.data;
         this.outboundDetailList = response.data.outboundDetailList;
         this.open = true;
-        this.title = "修改出库";
-      });
-    },
-    /** 查看按钮操作 */
-    handleSee(row) {
-      this.reset();
-      const outboundId = row.outboundId || this.ids
-      getOutbound(outboundId).then(response => {
-        this.form = response.data;
-        this.outboundDetailList = response.data.outboundDetailList;
-        this.open2 = true;
-        this.title2 = "修改出库";
+        this.title = "出库操作";
       });
     },
     /** 提交按钮 */
     submitForm() {
       this.$refs["form"].validate(valid => {
         if (valid) {
-          this.form.outboundDetailList = this.outboundDetailList;
+          this.form.status = '4';
           if (this.form.outboundId != null) {
             updateOutbound(this.form).then(response => {
-              this.$modal.msgSuccess("修改成功");
-              this.open = false;
-              this.getList();
-            });
-          } else {
-            addOutbound(this.form).then(response => {
-              this.$modal.msgSuccess("新增成功");
+              this.$modal.msgSuccess("提交成功");
               this.open = false;
               this.getList();
             });
@@ -533,7 +396,7 @@ export default {
         this.$modal.msgSuccess("删除成功");
       }).catch(() => {});
     },
-	/** 出库详情序号 */
+    /** 出库详情序号 */
     rowOutboundDetailIndex({ row, rowIndex }) {
       row.orderNum = rowIndex + 1;
     },
@@ -571,5 +434,5 @@ export default {
       }, `outbound_${new Date().getTime()}.xlsx`)
     }
   }
-};
+}
 </script>

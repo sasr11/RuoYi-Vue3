@@ -18,10 +18,10 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="更新者" prop="updateBy" label-width="auto">
+      <el-form-item label="入库者" prop="updateBy" label-width="auto">
         <el-input
             v-model="queryParams.updateBy"
-            placeholder="请输入更新者名称"
+            placeholder="请输入入库者名称"
             clearable
             @keyup.enter.native="handleQuery"
         />
@@ -109,11 +109,19 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button
+            v-if="scope.row.status==='0'"
             type="text"
             icon="Edit"
             @click="handleUpdate(scope.row)"
             v-hasPermi="['bs_server:inbound:edit']"
-          >修改</el-button>
+          >提交</el-button>
+          <el-button
+            v-if="scope.row.status==='1'"
+            type="text"
+            icon="Edit"
+            @click="handleSee(scope.row)"
+            v-hasPermi="['bs_server:inbound:edit']"
+          >查看</el-button>
           <el-button
             type="text"
             icon="Delete"
@@ -137,22 +145,13 @@
     <el-dialog :title="title" v-model="open" width="900px" append-to-body>
       <el-form :inline="true" ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item v-if="form.inboundId != undefined" label="入库编号" prop="inboundId">
-          <el-input style="width: 250px" v-model="form.inboundId" disabled/>
+          <div style="width: 250px">{{form.inboundId}}</div>
         </el-form-item>
-        <el-form-item v-if="form.userId != undefined" label="创建者" prop="userId">
-          <el-input style="width: 250px" v-model="form.userId" disabled/>
+        <el-form-item v-if="form.userId != undefined" label="创建者" prop="createBy">
+          <div style="width: 250px">{{form.createBy}}</div>
         </el-form-item>
         <el-form-item label="入库总价" prop="totalPrice">
-          <el-input style="width: 250px" v-model="form.totalPrice" disabled/>
-        </el-form-item>
-        <el-form-item label="入库状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio
-              v-for="dict in bs_inbound"
-              :key="dict.value"
-              :label="dict.value"
-            >{{dict.label}}</el-radio>
-          </el-radio-group>
+          <div style="width: 250px">{{form.totalPrice}}</div>
         </el-form-item>
         <!-- 入库详情 -->
         <el-divider content-position="center">入库详情信息</el-divider>
@@ -214,7 +213,7 @@
           </el-table-column>
           <el-table-column label="入库数量" align="center" prop="count" width="150">
             <template #default="scope">
-              <el-input v-model="scope.row.count" placeholder="请输入入库数量"/>
+              <el-input-number style="width: 120px" v-model="scope.row.count" controls-position="right" :min="0" />
             </template>
           </el-table-column>
           <el-table-column label="单价" align="center" prop="price" width="150">
@@ -225,7 +224,46 @@
         </el-table>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
+        <el-button type="primary" @click="submitForm">提交</el-button>
+        <el-button @click="cancel">取 消</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 查看数据对话框 -->
+    <el-dialog :title="title2" v-model="open2" width="900px" append-to-body>
+      <el-form :inline="true" ref="form" :model="form" :rules="rules" label-width="100px">
+        <el-form-item label="入库编号" prop="inboundId">
+          <div style="width: 250px">{{form.inboundId}}</div>
+        </el-form-item>
+        <el-form-item label="创建者" prop="createBy">
+          <div style="width: 250px">{{form.createBy}}</div>
+        </el-form-item>
+        <el-form-item label="入库总价" prop="totalPrice">
+          <div style="width: 250px">{{form.totalPrice}}</div>
+        </el-form-item>
+        <el-form-item label="入库者" prop="updateBy">
+          <div style="width: 250px">{{form.updateBy}}</div>
+        </el-form-item>
+        <!-- 入库详情 -->
+        <el-divider content-position="center">入库详情信息</el-divider>
+        <!-- 入库详情表数据 -->
+        <el-table
+            :data="inboundDetailList"
+            ref="inboundDetail"
+            height="250"
+            show-summary
+            :summary-method="summaryMethod2"
+        >
+          <el-table-column type="selection" width="50" align="center" />
+          <el-table-column label="序号" align="center" prop="orderNum" width="50"/>
+          <el-table-column label="供应商" align="center" prop="supplierName"  width="150"/>
+          <el-table-column label="仓库" align="center" prop="warehouseName"  width="150"/>
+          <el-table-column label="物资名称" align="center" prop="materialName"  width="150"/>
+          <el-table-column label="入库数量" align="center" prop="count" width="150"/>
+          <el-table-column label="单价" align="center" prop="price" width="150"/>
+        </el-table>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
@@ -272,12 +310,11 @@ export default {
       materialList: [],
 
       // 弹出层标题
-      title: "",
+      title: "", title2: "",
       // 是否显示弹出层
-      open: false,
+      open: false, open2: false,
       // 查询参数
       queryParams: {
-
         pageNum: 1,
         pageSize: 10,
         inboundId: null,
@@ -402,7 +439,7 @@ export default {
       this.title = "添加入库";
       this.form.totalPrice = 0;
     },
-    /** 修改按钮操作 */
+    /** 提交按钮操作 */
     handleUpdate(row) {
       this.reset();
       const inboundId = row.inboundId || this.ids
@@ -410,7 +447,18 @@ export default {
         this.form = response.data;
         this.inboundDetailList = response.data.inboundDetailList;
         this.open = true;
-        this.title = "修改入库";
+        this.title = "提交入库";
+      });
+    },
+    /** 查看按钮操作 */
+    handleSee(row) {
+      this.reset();
+      const inboundId = row.inboundId || this.ids
+      getInbound(inboundId).then(response => {
+        this.form = response.data;
+        this.inboundDetailList = response.data.inboundDetailList;
+        this.open2 = true;
+        this.title2 = "查看入库";
       });
     },
     /** 提交按钮 */

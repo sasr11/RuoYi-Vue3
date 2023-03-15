@@ -9,34 +9,26 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="客户编号" prop="clientId">
+      <el-form-item label="客户名称" prop="clientName">
         <el-input
-          v-model="queryParams.clientId"
-          placeholder="请输入客户编号"
+          v-model="queryParams.clientName"
+          placeholder="请输入客户名称"
           clearable
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="仓库编号" prop="warehouseId">
+      <el-form-item label="仓库名称" prop="warehouseName">
         <el-input
-          v-model="queryParams.warehouseId"
-          placeholder="请输入仓库编号"
+          v-model="queryParams.warehouseName"
+          placeholder="请输入仓库名称"
           clearable
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="物资编号" prop="materialId">
+      <el-form-item label="物资名称" prop="materialName">
         <el-input
-          v-model="queryParams.materialId"
-          placeholder="请输入物资编号"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="单价" prop="price">
-        <el-input
-          v-model="queryParams.price"
-          placeholder="请输入单价"
+          v-model="queryParams.materialName"
+          placeholder="请输入物资名称"
           clearable
           @keyup.enter.native="handleQuery"
         />
@@ -47,74 +39,21 @@
       </el-form-item>
     </el-form>
 
-    <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button
-          type="primary"
-          plain
-          icon="plus"
-          @click="handleAdd"
-          v-hasPermi="['bs_server:outboundDdetail:add']"
-        >新增</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="success"
-          plain
-          icon="edit"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['bs_server:outboundDdetail:edit']"
-        >修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="danger"
-          plain
-          icon="delete"
-          :disabled="multiple"
-          @click="handleDelete"
-          v-hasPermi="['bs_server:outboundDdetail:remove']"
-        >删除</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="warning"
-          plain
-          icon="download"
-          @click="handleExport"
-          v-hasPermi="['bs_server:outboundDdetail:export']"
-        >导出</el-button>
-      </el-col>
-      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
-    </el-row>
-
-    <el-table v-loading="loading" :data="outboundDdetailList" @selection-change="handleSelectionChange">
+    <el-table
+        v-loading="loading"
+        :data="outboundDdetailList"
+        @selection-change="handleSelectionChange"
+        show-summary
+        :summary-method="summaryMethod"
+    >
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="主键" align="center" prop="outboundDetailId" />
+      <el-table-column label="序号" align="center" prop="orderNum" />
       <el-table-column label="出库编号" align="center" prop="outboundId" />
-      <el-table-column label="显示顺序" align="center" prop="orderNum" />
-      <el-table-column label="客户编号" align="center" prop="clientId" />
-      <el-table-column label="仓库编号" align="center" prop="warehouseId" />
-      <el-table-column label="物资编号" align="center" prop="materialId" />
-      <el-table-column label="数量" align="center" prop="count" />
+      <el-table-column label="客户名称" align="center" prop="clientName" />
+      <el-table-column label="仓库名称" align="center" prop="warehouseName" />
+      <el-table-column label="物资名称" align="center" prop="materialName" />
+      <el-table-column label="出库数量" align="center" prop="count" />
       <el-table-column label="单价" align="center" prop="price" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
-        <template slot-scope="scope">
-          <el-button
-            type="text"
-            icon="edit"
-            @click="handleUpdate(scope.row)"
-            v-hasPermi="['bs_server:outboundDdetail:edit']"
-          >修改</el-button>
-          <el-button
-            type="text"
-            icon="delete"
-            @click="handleDelete(scope.row)"
-            v-hasPermi="['bs_server:outboundDdetail:remove']"
-          >删除</el-button>
-        </template>
-      </el-table-column>
     </el-table>
     
     <pagination
@@ -204,6 +143,17 @@ export default {
     this.getList();
   },
   methods: {
+    /** 表格合计 */
+    summaryMethod(params) { // params是由 columns列数和data整个表格数据 组成的对象，具体计算看个人需求
+      let {columns, data} = params;
+      let sum = 0;
+      data.forEach((value) => {
+        if(value.count !== '' && value.price !== ''){
+          sum = sum + parseInt(value.count) * parseFloat(value.price);
+        }
+      })
+      return ['', '', '', '', '', '', '总价', '¥ '+sum, ''];  //最后的返回值，列表中元素个数与列数相同
+    },
     /** 查询出库详情列表 */
     getList() {
       this.loading = true;
