@@ -1,5 +1,14 @@
 import request from '@/utils/request'
 
+// 初始化区块链的出库列表
+export function InitOutbound(query) {
+  return request({
+    url: '/bs_server/outbound/init',
+    method: 'get',
+    params: query
+  })
+}
+
 // 查询出库列表
 export function listOutbound(query) {
   return request({

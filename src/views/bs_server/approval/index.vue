@@ -75,22 +75,24 @@
           <dict-tag :options="bs_approval_status" :value="scope.row.status"/>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime"/>
+      <el-table-column label="创建时间" width="155" align="center" prop="createTime"/>
       <el-table-column label="审批意见" align="center" prop="comment" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button
+            v-if="scope.row.status!=='1'"
             type="text"
             icon="edit"
             @click="handleUpdate(scope.row)"
             v-hasPermi="['bs_server:approval:edit']"
           >审批</el-button>
           <el-button
-            type="text"
-            icon="delete"
-            @click="handleDelete(scope.row)"
-            v-hasPermi="['bs_server:approval:remove']"
-          >删除</el-button>
+              v-if="scope.row.status==='1'"
+              type="text"
+              icon="View"
+              @click="handleUpdate(scope.row)"
+              v-hasPermi="['bs_server:approval:edit']"
+          >查看</el-button>
         </template>
       </el-table-column>
     </el-table>

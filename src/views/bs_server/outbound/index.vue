@@ -10,11 +10,11 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="申请时间">
+      <el-form-item label="提交时间">
         <el-date-picker
           v-model="daterangeCreateTime"
           style="width: 240px"
-          value-format="yyyy-MM-dd"
+          value-format="YYYY-MM-DD"
           type="daterange"
           range-separator="-"
           start-placeholder="开始日期"
@@ -33,7 +33,7 @@
         <el-date-picker
           v-model="daterangeUpdateTime"
           style="width: 240px"
-          value-format="yyyy-MM-dd"
+          value-format="YYYY-MM-DD"
           type="daterange"
           range-separator="-"
           start-placeholder="开始日期"
@@ -69,12 +69,32 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
+            v-if="role_ === 'admin'"
+            type="danger"
+            plain
+            icon="delete"
+            :disabled="multiple"
+            @click="handleDelete"
+            v-hasPermi="['bs_server:outbound:remove']"
+        >删除</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button
           type="warning"
           plain
           icon="download"
           @click="handleExport"
           v-hasPermi="['bs_server:outbound:export']"
         >导出</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button
+            v-if="role_ === 'admin'"
+            type="success"
+            plain
+            icon="Edit"
+            @click="handleInit"
+        >同步</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
@@ -96,9 +116,9 @@
           <dict-tag :options="bs_outbound" :value="scope.row.status"/>
         </template>
       </el-table-column>
-      <el-table-column label="提交时间" align="center" prop="createTime"/>
+      <el-table-column label="提交时间" width="155" align="center" prop="createTime"/>
       <el-table-column label="出库人" align="center" prop="updateBy" />
-      <el-table-column label="出库时间" align="center" prop="updateTime"/>
+      <el-table-column label="出库时间" width="155" align="center" prop="updateTime"/>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button
@@ -111,16 +131,16 @@
           <el-button
             v-if="scope.row.status!=='0'"
             type="text"
-            icon="edit"
+            icon="View"
             @click="handleSee(scope.row)"
             v-hasPermi="['bs_server:outbound:edit']"
           >查看</el-button>
           <el-button
-              v-if="userName_ === 'admin'"
-            type="text"
-            icon="delete"
-            @click="handleDelete(scope.row)"
-            v-hasPermi="['bs_server:outbound:remove']"
+              v-if="scope.row.status==='0'"
+              type="text"
+              icon="delete"
+              @click="handleDelete(scope.row)"
+              v-hasPermi="['bs_server:outbound:remove']"
           >删除</el-button>
         </template>
       </el-table-column>
@@ -130,8 +150,8 @@
     <pagination
       v-show="total>0"
       :total="total"
-      :page.sync="queryParams.pageNum"
-      :limit.sync="queryParams.pageSize"
+      v-model:page="queryParams.pageNum"
+      v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
 
@@ -279,7 +299,7 @@
 </template>
 
 <script>
-import { listOutbound, getOutbound, delOutbound, addOutbound, updateOutbound } from "@/api/bs_server/outbound";
+import { InitOutbound, listOutbound, getOutbound, delOutbound, addOutbound, updateOutbound } from "@/api/bs_server/outbound";
 import { listMaterial } from "@/api/bs_server/material";
 import { listClient } from "@/api/bs_server/client";
 import { listWarehouse } from "@/api/bs_server/warehouse";
@@ -288,6 +308,7 @@ import { useDict } from "@/utils/dict";
 import store from '@/store'
 
 export default {
+  // 出库申请（用户操作）
   name: "Outbound",
   data() {
     return {
@@ -347,20 +368,21 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        status: { required: true, message: '请选择状态', trigger: 'blur' },
+        processId: { required: true, message: '请选择状态', trigger: 'blur' },
       }
     };
   },
   created() {
     this.getList();
-    console.log(store.state.value.user.roles[0]);
     this.bs_outbound = useDict("bs_outbound")["bs_outbound"];  //获取字典数据
   },
   methods: {
     /** 查询出库列表 */
     getList() {
       this.loading = true;
+      // 限制数据显示的范围
       if(this.role_ !== "admin") this.queryParams.createBy = this.userName_;
+      // 设置时间范围查询的参数
       this.queryParams.params = {};
       if (null != this.daterangeCreateTime && '' !== this.daterangeCreateTime) {
         this.queryParams.params["beginCreateTime"] = this.daterangeCreateTime[0];
@@ -392,7 +414,8 @@ export default {
       })
     },
     getListMaterial(){
-      listMaterial().then(res =>{
+      this.queryParams.pageSize = 30;
+      listMaterial(this.queryParams).then(res =>{
         this.materialList = res.rows;
       })
     },
@@ -491,6 +514,10 @@ export default {
         this.title = "修改出库";
       });
     },
+    handleInit() {
+      InitOutbound().then(response => {
+      });
+    },
     /** 查看按钮操作 */
     handleSee(row) {
       this.reset();
@@ -499,7 +526,7 @@ export default {
         this.form = response.data;
         this.outboundDetailList = response.data.outboundDetailList;
         this.open2 = true;
-        this.title2 = "修改出库";
+        this.title2 = "查看出库";
       });
     },
     /** 提交按钮 */

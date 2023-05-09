@@ -71,6 +71,7 @@
             v-hasPermi="['bs_server:materialType:add']"
           >新增</el-button>
           <el-button
+            v-if="scope.row.parentId!==0"
             type="text"
             icon="delete"
             @click="handleDelete(scope.row)"
@@ -174,8 +175,10 @@ export default {
     getTreeselect() {
       listMaterialType().then(response => {
         this.materialTypeOptions = [];
-        const data = { materialTypeId: 0, materialTypeName: '根节点', children: [] };
-        data.children = this.handleTree(response.data, "materialTypeId", "parentId");
+        let info = this.handleTree(response.data, "materialTypeId", "parentId");  //树状结构
+        //需要先设置根结点ID和根结点名称
+        const data = { materialTypeId: info[0].materialTypeId, materialTypeName: info[0].materialTypeName, children: [] };
+        data.children = info[0].children;
         this.materialTypeOptions.push(data);
       });
     },
@@ -211,7 +214,7 @@ export default {
       if (row != null && row.materialTypeId) {
         this.form.parentId = row.materialTypeId;
       } else {
-        this.form.parentId = 0;
+        this.form.parentId = 10;
       }
       this.open = true;
       this.title = "添加物资分类";

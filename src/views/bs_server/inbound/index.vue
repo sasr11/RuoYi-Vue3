@@ -36,6 +36,28 @@
           />
         </el-select>
       </el-form-item>
+      <el-form-item label="创建时间">
+        <el-date-picker
+            v-model="daterangeCreateTime"
+            style="width: 240px"
+            value-format="YYYY-MM-DD"
+            type="daterange"
+            range-separator="-"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+        ></el-date-picker>
+      </el-form-item>
+      <el-form-item label="更新时间">
+        <el-date-picker
+            v-model="daterangeUpdateTime"
+            style="width: 240px"
+            value-format="YYYY-MM-DD"
+            type="daterange"
+            range-separator="-"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+        ></el-date-picker>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -52,16 +74,6 @@
           @click="handleAdd"
           v-hasPermi="['bs_server:inbound:add']"
         >新增</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="success"
-          plain
-          icon="Edit"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['bs_server:inbound:edit']"
-        >修改</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
@@ -82,6 +94,15 @@
           v-hasPermi="['bs_server:inbound:export']"
         >导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+            v-if="role_ === 'admin'"
+            type="success"
+            plain
+            icon="Edit"
+            @click="handleInit"
+        >同步</el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -90,7 +111,6 @@
         v-loading="loading"
         :data="inboundList"
         @selection-change="handleSelectionChange"
-        border
         show-summary
         :summary-method="summaryMethod1"
     >
@@ -103,9 +123,9 @@
           <dict-tag :options="bs_inbound" :value="scope.row.status"/>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime"/>
+      <el-table-column label="创建时间" width="155" align="center" prop="createTime"/>
       <el-table-column label="更新者" align="center" prop="updateBy"/>
-      <el-table-column label="更新时间" align="center" prop="updateTime"/>
+      <el-table-column label="更新时间" width="155" align="center" prop="updateTime"/>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button
@@ -118,7 +138,7 @@
           <el-button
             v-if="scope.row.status==='1'"
             type="text"
-            icon="Edit"
+            icon="View"
             @click="handleSee(scope.row)"
             v-hasPermi="['bs_server:inbound:edit']"
           >查看</el-button>
@@ -224,14 +244,14 @@
         </el-table>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">提交</el-button>
+        <el-button type="primary" @click="submitForm">提 交</el-button>
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
 
     <!-- 查看数据对话框 -->
     <el-dialog :title="title2" v-model="open2" width="900px" append-to-body>
-      <el-form :inline="true" ref="form" :model="form" :rules="rules" label-width="100px">
+      <el-form :inline="true" ref="form" :model="form" :rules="rules" label-width="100px" disabled>
         <el-form-item label="入库编号" prop="inboundId">
           <div style="width: 250px">{{form.inboundId}}</div>
         </el-form-item>
@@ -271,16 +291,18 @@
 </template>
 
 <script>
-import { listInbound, getInbound, delInbound, addInbound, updateInbound } from "@/api/bs_server/inbound";
+import {listInbound, getInbound, delInbound, addInbound, updateInbound, InitInbound} from "@/api/bs_server/inbound";
 import { listMaterial } from "@/api/bs_server/material";
 import { listSupplier } from "@/api/bs_server/supplier";
 import { listWarehouse } from "@/api/bs_server/warehouse";
 import { useDict } from "@/utils/dict";
+import store from "@/store";
 
 export default {
   name: "Inbound",
   data() {
     return {
+      role_: store.state.value.user.roles[0],
       // 字典数据
       bs_inbound: null,
       // 遮罩层
@@ -313,6 +335,10 @@ export default {
       title: "", title2: "",
       // 是否显示弹出层
       open: false, open2: false,
+      // 创建时间范围
+      daterangeCreateTime: [],
+      // 更新时间范围
+      daterangeUpdateTime: [],
       // 查询参数
       queryParams: {
         pageNum: 1,
@@ -375,6 +401,16 @@ export default {
     /** 查询入库列表 */
     getList() {
       this.loading = true;
+      // 设置时间范围查询的参数
+      this.queryParams.params = {};
+      if (null != this.daterangeCreateTime && '' !== this.daterangeCreateTime) {
+        this.queryParams.params["beginCreateTime"] = this.daterangeCreateTime[0];
+        this.queryParams.params["endCreateTime"] = this.daterangeCreateTime[1];
+      }
+      if (null != this.daterangeUpdateTime && '' !== this.daterangeUpdateTime) {
+        this.queryParams.params["beginUpdateTime"] = this.daterangeUpdateTime[0];
+        this.queryParams.params["endUpdateTime"] = this.daterangeUpdateTime[1];
+      }
       listInbound(this.queryParams).then(response => {
         this.inboundList = response.rows;
         this.total = response.total;
@@ -395,13 +431,16 @@ export default {
       })
     },
     getListMaterial(){
-      listMaterial().then(res =>{
+      this.queryParams.pageSize = 30;
+      listMaterial(this.queryParams).then(res =>{
         this.materialList = res.rows;
+        console.log(this.materialList)
       })
     },
     // 取消按钮
     cancel() {
       this.open = false;
+      this.open2 = false;
       this.reset();
     },
     // 表单重置
@@ -411,7 +450,8 @@ export default {
         userId: null,
         totalPrice: null,
         status: null,
-        createTime: null
+        createTime: null,
+        updateTime: null
       };
       this.inboundDetailList = [];
       this.resetForm("form");
@@ -423,6 +463,8 @@ export default {
     },
     /** 重置按钮操作 */
     resetQuery() {
+      this.daterangeCreateTime = [];
+      this.daterangeUpdateTime = [];
       this.resetForm("queryForm");
       this.handleQuery();
     },
@@ -450,6 +492,11 @@ export default {
         this.title = "提交入库";
       });
     },
+    /** 初始化区块链数据 */
+    handleInit() {
+      InitInbound().then(response => {
+      });
+    },
     /** 查看按钮操作 */
     handleSee(row) {
       this.reset();
@@ -467,14 +514,14 @@ export default {
         if (valid) {
           this.form.inboundDetailList = this.inboundDetailList;
           if (this.form.inboundId != null) {
-            console.log("update");
+            // update
             updateInbound(this.form).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.open = false;
               this.getList();
             });
           } else {
-            console.log("add");
+            // add;
             addInbound(this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;

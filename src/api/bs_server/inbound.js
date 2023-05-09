@@ -1,5 +1,14 @@
 import request from '@/utils/request'
 
+// 初始化区块链的入库列表
+export function InitInbound(query) {
+  return request({
+    url: '/bs_server/inbound/init',
+    method: 'get',
+    params: query
+  })
+}
+
 // 查询入库列表
 export function listInbound(query) {
   return request({

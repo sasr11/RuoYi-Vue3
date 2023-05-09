@@ -10,11 +10,11 @@
             @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="申请时间">
+      <el-form-item label="提交时间">
         <el-date-picker
             v-model="daterangeCreateTime"
             style="width: 240px"
-            value-format="yyyy-MM-dd"
+            value-format="YYYY-MM-DD"
             type="daterange"
             range-separator="-"
             start-placeholder="开始日期"
@@ -33,7 +33,7 @@
         <el-date-picker
             v-model="daterangeUpdateTime"
             style="width: 240px"
-            value-format="yyyy-MM-dd"
+            value-format="YYYY-MM-DD"
             type="daterange"
             range-separator="-"
             start-placeholder="开始日期"
@@ -48,15 +48,6 @@
 
     <!-- 操作按钮 -->
     <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button
-            type="primary"
-            plain
-            icon="plus"
-            @click="handleAdd"
-            v-hasPermi="['bs_server:outbound:add']"
-        >新增</el-button>
-      </el-col>
       <el-col :span="1.5">
         <el-button
             type="warning"
@@ -93,9 +84,9 @@
           <dict-tag :options="bs_outbound" :value="scope.row.status"/>
         </template>
       </el-table-column>
-      <el-table-column label="提交时间" align="center" prop="createTime"/>
+      <el-table-column label="提交时间" width="155" align="center" prop="createTime"/>
       <el-table-column label="出库人" align="center" prop="updateBy" />
-      <el-table-column label="出库时间" align="center" prop="updateTime"/>
+      <el-table-column label="出库时间" width="155" align="center" prop="updateTime"/>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button
@@ -108,7 +99,7 @@
           <el-button
               v-if="scope.row.status === '4'"
               type="text"
-              icon="edit"
+              icon="View"
               @click="handleUpdate(scope.row)"
               v-hasPermi="['bs_server:outbound:edit']"
           >查看</el-button>
@@ -127,8 +118,8 @@
     <pagination
         v-show="total>0"
         :total="total"
-        :page.sync="queryParams.pageNum"
-        :limit.sync="queryParams.pageSize"
+        v-model:page="queryParams.pageNum"
+        v-model:limit="queryParams.pageSize"
         @pagination="getList"
     />
 
@@ -170,7 +161,7 @@
         </el-table>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">提交</el-button>
+        <el-button type="primary" @click="submitForm" v-if="form.status==='3'">确认出库</el-button>
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
@@ -185,6 +176,7 @@ import {useDict} from "@/utils/dict";
 import {addOutbound, delOutbound, getOutbound, listOutbound, updateOutbound} from "@/api/bs_server/outbound";
 
 export default {
+  // 出库管理（由仓库管理员操作）
   name: "operation",
   data() {
     return {
@@ -256,6 +248,7 @@ export default {
     /** 查询出库列表 */
     getList() {
       this.loading = true;
+      // 设置时间范围查询的参数
       this.queryParams.params = {};
       if (null != this.daterangeCreateTime && '' !== this.daterangeCreateTime) {
         this.queryParams.params["beginCreateTime"] = this.daterangeCreateTime[0];

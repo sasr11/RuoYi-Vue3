@@ -72,7 +72,9 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="物资编号" align="center" prop="materialId" />
       <el-table-column label="物资名称" align="center" prop="materialName" />
-      <el-table-column label="物资类别编号" align="center" prop="materialTypeId" />
+      <el-table-column label="物资类别" align="center" prop="materialTypeName" />
+      <el-table-column label="入库总数" align="center" prop="totalCount" />
+      <el-table-column label="当前数量" align="center" prop="currentCount" />
       <el-table-column label="备注" align="center" prop="remark" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
@@ -95,8 +97,8 @@
     <pagination
       v-show="total>0"
       :total="total"
-      :page.sync="queryParams.pageNum"
-      :limit.sync="queryParams.pageSize"
+      v-model:page="queryParams.pageNum"
+      v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
 

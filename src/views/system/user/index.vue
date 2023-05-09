@@ -28,6 +28,7 @@
          </el-col>
          <!--用户数据-->
          <el-col :span="20" :xs="24">
+            <!--查询参数-->
             <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
                <el-form-item label="用户名称" prop="userName">
                   <el-input
@@ -77,7 +78,7 @@
                   <el-button icon="Refresh" @click="resetQuery">重置</el-button>
                </el-form-item>
             </el-form>
-
+            <!--操作-->
             <el-row :gutter="10" class="mb8">
                <el-col :span="1.5">
                   <el-button
@@ -128,7 +129,7 @@
                </el-col>
                <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
             </el-row>
-
+            <!--表格数据-->
             <el-table v-loading="loading" :data="userList" @selection-change="handleSelectionChange">
                <el-table-column type="selection" width="50" align="center" />
                <el-table-column label="用户编号" align="center" key="userId" prop="userId" v-if="columns[0].visible" />
